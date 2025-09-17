@@ -46,8 +46,10 @@ const Profile = () => {
       } catch (err: any) {
         setError(err.message);
         // If token is invalid, it's good practice to clear it and redirect
-        localStorage.removeItem("authToken");
-        navigate("/login");
+      //     if (!token) {
+      //   navigate("/login");
+      //   return;
+      // }
       } finally {
         setLoading(false);
       }
