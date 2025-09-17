@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, User, MapPin, Heart } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, MapPin } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -24,87 +24,59 @@ const Signup = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
+    setFormData(prev => ({ ...prev, [name]: value }));
     if (validationErrors[name]) {
-      setValidationErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
+      setValidationErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
   const validateForm = () => {
     const errors: {[key: string]: string} = {};
-    
-    if (!formData.username.trim()) {
-      errors.username = 'Username is required';
-    } else if (formData.username.length < 3) {
-      errors.username = 'Username must be at least 3 characters';
-    } else if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
-      errors.username = 'Username can only contain letters, numbers, and underscores';
-    }
-    
-    if (!formData.email) {
-      errors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = 'Email is invalid';
-    }
-    
-    if (!formData.password) {
-      errors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
-    }
-    
-    if (!formData.confirmPassword) {
-      errors.confirmPassword = 'Please confirm your password';
-    } else if (formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match';
-    }
-    
-    if (!formData.address.trim()) {
-      errors.address = 'Address is required';
-    }
-    
+    if (!formData.username.trim() || formData.username.length < 3) errors.username = 'Username must be at least 3 characters';
+    if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) errors.username = 'Username can only contain letters, numbers, and underscores';
+    if (!formData.email || !/\S+@\S+\.\S+/.test(formData.email)) errors.email = 'Please enter a valid email address';
+    if (!formData.password || formData.password.length < 6) errors.password = 'Password must be at least 6 characters';
+    if (formData.password !== formData.confirmPassword) errors.confirmPassword = 'Passwords do not match';
+    if (!formData.address.trim()) errors.address = 'Address is required';
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!validateForm()) return;
-    
     setLoading(true);
 
     try {
-      // Simulate signup process
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      toast({
-        title: "Account created successfully!",
-        description: "Welcome to DateWeave! You can now sign in.",
+      const response = await fetch("http://127.0.0.1:5000/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          username: formData.username,
+          address: formData.address,
+        }),
       });
 
-      // Clear form
-      setFormData({
-        username: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-        address: ''
-      });
-      
-      navigate('/login');
-      
-    } catch (error) {
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Signup failed. Please try again.");
+      }
+
       toast({
-        title: "Signup failed",
-        description: "Please try again later",
+        title: "Account created successfully!",
+        description: data.message || "Welcome to DateWeave! You can now sign in.",
+      });
+
+      setFormData({ username: '', email: '', password: '', confirmPassword: '', address: '' });
+      navigate('/login');
+
+    } catch (error: any) {
+      toast({
+        title: "Signup Failed",
+        description: error.message,
         variant: "destructive"
       });
     } finally {
@@ -114,7 +86,7 @@ const Signup = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Floating hearts animation */}
+       {/* Floating hearts animation -- CORRECTED */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="floating-hearts absolute top-1/4 left-1/4 text-4xl opacity-20">💖</div>
         <div className="floating-hearts absolute top-1/3 right-1/4 text-2xl opacity-15 animation-delay-1000">💕</div>
@@ -127,7 +99,7 @@ const Signup = () => {
           <div className="flex flex-col items-center space-y-4">
             <div className="relative">
               <div className="w-16 h-16 bg-romantic-gradient rounded-full flex items-center justify-center shadow-romantic">
-                <img src='logo.png' className='rounded-full w-30 h-30'/>
+                <img src='logo.png' alt="DateWeave Logo" className='rounded-full w-30 h-30'/>
               </div>
             </div>
             <div className="text-center space-y-2">
@@ -279,15 +251,6 @@ const Signup = () => {
                 'Sign Up'
               )}
             </Button>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-muted" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-3 text-muted-foreground">Or</span>
-              </div>
-            </div>
 
             <div className="text-center">
               <p className="text-sm text-muted-foreground">

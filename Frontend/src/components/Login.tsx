@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, Heart } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -10,70 +10,64 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
+    setFormData(prev => ({ ...prev, [name]: value }));
     if (validationErrors[name]) {
-      setValidationErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
+      setValidationErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
   const validateForm = () => {
     const errors: {[key: string]: string} = {};
-    
-    if (!formData.email) {
-      errors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = 'Email is invalid';
-    }
-    
-    if (!formData.password) {
-      errors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
-    }
-    
+    if (!formData.email) errors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) errors.email = 'Email is invalid';
+    if (!formData.password) errors.password = 'Password is required';
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!validateForm()) return;
-    
     setLoading(true);
 
     try {
-      // Simulate login
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      const response = await fetch("http://127.0.0.1:5000/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Login failed. Please check your credentials.");
+      }
+
+      if (data.access_token) {
+        localStorage.setItem("authToken", data.access_token);
+      }
+
       toast({
         title: "Welcome back!",
-        description: "Successfully signed in to DateWeave",
+        description: "Successfully signed in to DateWeave.",
       });
-      
+
       navigate('/profile');
-      
-    } catch (error) {
+
+    } catch (error: any) {
       toast({
-        title: "Login failed",
-        description: "Please check your credentials and try again",
+        title: "Login Failed",
+        description: error.message,
         variant: "destructive"
       });
     } finally {
@@ -93,9 +87,9 @@ const Login = () => {
       <Card className="w-full max-w-md bg-card/80 backdrop-blur-xl border-primary/20 shadow-glow">
         <CardHeader className="space-y-6 pb-8">
           <div className="flex flex-col items-center space-y-4">
-            <div className="relative">
+             <div className="relative">
               <div className="w-16 h-16 bg-romantic-gradient rounded-full flex items-center justify-center shadow-romantic">
-                <img src='logo.png' className='rounded-full w-50 h-50'/>
+                <img src='logo.png' alt="DateWeave Logo" className='rounded-full w-50 h-50'/>
               </div>
             </div>
             <div className="text-center space-y-2">
@@ -177,16 +171,7 @@ const Login = () => {
                 'Sign In'
               )}
             </Button>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-muted" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-3 text-muted-foreground">Or</span>
-              </div>
-            </div>
-
+            
             <div className="text-center">
               <p className="text-sm text-muted-foreground">
                 Don't have an account?{' '}
